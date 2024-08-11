@@ -1,9 +1,10 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
-import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { PublishOrSubscribeTrack } from "../components/tracks";
+import { sessionAtom } from "../atoms";
+import { useAtom } from "jotai";
 
 export const meta: MetaFunction = () => {
   return [
@@ -13,10 +14,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const [peerConnection, setPeerConnection] =
-    useState<RTCPeerConnection | null>(null);
-
-  const [sessionId, setSessionId] = useState("");
+  const [session, setSession] = useAtom(sessionAtom);
 
   const initPeerConnection = async () => {
     const peerConnection = new RTCPeerConnection({
@@ -74,18 +72,17 @@ export default function Index() {
 
     await connected;
 
-    setPeerConnection(peerConnection);
-    setSessionId(resp.sessionId);
+    setSession({ pc: peerConnection, sessionId: resp.sessionId });
   };
 
   return (
     <div className="vertical center">
       <div className="vertical center debug space-y-10 w-1/3">
         <h1 className="text-2xl pt-12 underline">Cloudflare Calls Demo</h1>
-        <Button disabled={!!sessionId} onClick={initPeerConnection}>
+        <Button disabled={!!session} onClick={initPeerConnection}>
           Init Session
         </Button>
-        {sessionId ? <SessionIdBox sessionId={sessionId} /> : null}
+        {session ? <SessionIdBox sessionId={session.sessionId} /> : null}
         <PublishOrSubscribeTrack />
       </div>
     </div>

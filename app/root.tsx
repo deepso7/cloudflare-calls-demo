@@ -15,6 +15,7 @@ import {
 } from "remix-themes";
 import { themeSessionResolver } from "./sessions.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Return the theme from the session storage using the loader
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -46,13 +47,20 @@ function BaseLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+const queryClient = new QueryClient();
+
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const data = useLoaderData<typeof loader>();
 
   return (
-    <ThemeProvider specifiedTheme={data.theme} themeAction="/action/set-theme">
-      <BaseLayout>{children}</BaseLayout>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        specifiedTheme={data.theme}
+        themeAction="/action/set-theme"
+      >
+        <BaseLayout>{children}</BaseLayout>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 
