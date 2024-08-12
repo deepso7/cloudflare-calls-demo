@@ -79,10 +79,11 @@ export default function Index() {
     <div className="vertical center">
       <div className="vertical center debug space-y-10 w-1/3">
         <h1 className="text-2xl pt-12 underline">Cloudflare Calls Demo</h1>
-        <Button disabled={!!session} onClick={initPeerConnection}>
-          Init Session
-        </Button>
-        {session ? <SessionIdBox sessionId={session.sessionId} /> : null}
+        {session ? (
+          <SessionIdBox sessionId={session.sessionId} />
+        ) : (
+          <Button onClick={initPeerConnection}>Init Session</Button>
+        )}
         <PublishOrSubscribeTrack />
       </div>
     </div>
@@ -91,7 +92,7 @@ export default function Index() {
 
 const SessionIdBox = ({ sessionId }: { sessionId: string }) => {
   return (
-    <Alert>
+    <Alert className="w-2/3">
       <Terminal className="h-4 w-4" />
       <AlertTitle>{sessionId}</AlertTitle>
       <AlertDescription>{"Here's your session id"}</AlertDescription>

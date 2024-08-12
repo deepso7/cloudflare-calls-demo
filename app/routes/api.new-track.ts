@@ -21,10 +21,12 @@ export async function action({ request }: ActionFunctionArgs) {
         Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
       },
       body: JSON.stringify({
-        sessionDescription: {
-          sdp: body.sessionDescription?.sdp,
-          type: "offer",
-        },
+        sessionDescription: body.sessionDescription
+          ? {
+              sdp: body.sessionDescription.sdp,
+              type: "offer",
+            }
+          : undefined,
         tracks: body.tracks,
       }),
     }

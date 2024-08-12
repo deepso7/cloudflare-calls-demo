@@ -2,9 +2,25 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { useAtomValue } from "jotai";
 import { sessionAtom } from "../atoms";
+import { useState } from "react";
+import { Input } from "./ui/input";
+import { FormProvider, useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export const PublishOrSubscribeTrack = () => {
   const session = useAtomValue(sessionAtom);
+
+  const [subscribe, setSubscribe] = useState(false);
 
   const publishMutation = useMutation({
     mutationFn: async () => {
@@ -49,9 +65,46 @@ export const PublishOrSubscribeTrack = () => {
     },
   });
 
+  return (
+    <section className="horizontal center space-x-4 w-full">
+      {subscribe ? (
+        <SubscribeForm setSubscribe={setSubscribe} />
+      ) : (
+        <>
+          <Button className="w-1/3" onClick={() => publishMutation.mutate()}>
+            Publish Track
+          </Button>
+          <Button className="w-1/3" onClick={() => setSubscribe(true)}>
+            Subscribe Track
+          </Button>
+        </>
+      )}
+    </section>
+  );
+};
+
+const SubscribeForm = ({
+  setSubscribe,
+}: {
+  setSubscribe: (val: false) => void;
+}) => {
+  const session = useAtomValue(sessionAtom);
+
+  const formSchema = z.object({
+    sessionId: z.string(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  });
+
   const subscribeTrack = useMutation({
-    mutationFn: async ({ remoteSessionId }: { remoteSessionId: string }) => {
+    mutationFn: async (remoteSessionId: string) => {
       if (!session) throw new Error("Initialize a session first");
+      if (session.sessionId === remoteSessionId)
+        throw new Error(
+          "local and remote session id cannot be same, don't just copy paste from above"
+        );
 
       const sessionResp = (await fetch(
         `/api/get-session/${remoteSessionId}`
@@ -63,6 +116,8 @@ export const PublishOrSubscribeTrack = () => {
           status: "active" | "inactive";
         }[];
       };
+
+      console.log({ sessionResp });
 
       const tracksToPull = sessionResp.tracks.map((t) => ({
         location: "remote",
@@ -131,11 +186,38 @@ export const PublishOrSubscribeTrack = () => {
   });
 
   return (
-    <section className="horizontal center space-x-4 w-full">
-      <Button className="w-1/3" onClick={() => publishMutation.mutate()}>
-        Publish Track
+    <div className="w-full horizontal vertical center space-y-4">
+      <Button variant="outline" onClick={() => setSubscribe(false)}>
+        Go Back
       </Button>
-      <Button className="w-1/3">Subscribe Track</Button>
-    </section>
+      <FormProvider {...form}>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((val) => {
+              subscribeTrack.mutateAsync(val.sessionId);
+            })}
+            className="space-y-4 w-2/3"
+          >
+            <FormField
+              control={form.control}
+              name="sessionId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Session Id</FormLabel>
+                  <FormControl>
+                    <Input placeholder="xxxxx" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Session Id copied from other tab
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">Submit</Button>
+          </form>
+        </Form>
+      </FormProvider>
+    </div>
   );
 };
